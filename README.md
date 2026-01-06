@@ -145,6 +145,17 @@ torchrun --nproc_per_node=8 scripts/evaluation.py \
 
 The `--dataset` flag supports `geneval`, `ocr`, `pickscore`, and `drawbench`.
 
+## Third-party Usage and Research
+
+We are pleased to see DiffusionNFT being extended to a variety of new settings and applications. We welcome and encourage readers to refer to the following works and their corresponding implementations.
+
+| **Time**     | **Research**                                                                                                                  | **Link**                                                           |
+|--------------|-------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|
+| [12/2025]  | HY-World 1.5: A Systematic Framework for Interactive World Modeling with Real-Time Latency and Geometric Consistency | https://github.com/Tencent-Hunyuan/HY-WorldPlay |
+| [12/2025]  | MotionEdit: Benchmarking and Learning Motion-Centric Image Editing                                                   | https://github.com/elainew728/motion-edit/      |
+| [11/2025]  | MammothModa2: A Unified AR-Diffusion Framework for Multimodal Understanding and Generation                           | https://github.com/bytedance/mammothmoda        |
+| [10/2025]  | Uniworld-V2: Reinforce Image Editing with Diffusion Negative-aware Finetuning and MLLM Implicit Feedback             | https://github.com/PKU-YuanGroup/Edit-R1        |
+
 ## Acknowledgement
 We thank the [Flow-GRPO](https://github.com/yifan123/flow_grpo) project for providing the awesome open-source diffusion RL codebase.
 
