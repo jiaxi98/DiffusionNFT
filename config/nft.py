@@ -94,6 +94,32 @@ def sd3_geneval():
     return config
 
 
+def sd3_geneval_safe():
+    """Safer GenEval config for 8-GPU runs to avoid OOM."""
+    reward_fn = {
+        "geneval": 1.0,
+    }
+    config = _get_config(
+        base_model="sd3",
+        n_gpus=8,
+        gradient_step_per_epoch=1,
+        dataset="geneval",
+        reward_fn=reward_fn,
+        name="geneval_safe",
+    )
+
+    # Override for lower memory usage (validated on 8 GPUs).
+    config.sample.num_image_per_prompt = 8  # k must divide (n_gpus * train_batch_size) => 8 | 16
+    config.sample.train_batch_size = 2
+    config.sample.num_batches_per_epoch = 24
+    config.train.batch_size = 2
+    config.train.gradient_accumulation_steps = 24
+    config.sample.test_batch_size = 4
+    config.sample.num_steps = 6
+    config.sample.eval_num_steps = 10
+    return config
+
+
 def sd3_pickscore():
     reward_fn = {
         "pickscore": 1.0,

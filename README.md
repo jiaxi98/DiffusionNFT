@@ -39,6 +39,15 @@ conda create -n DiffusionNFT python=3.10.16
 pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu126
 pip install -e .
 ```
+
+### SD3.5-Medium Download
+
+```bash
+# Requires HF access and login for gated model
+huggingface-cli login
+huggingface-cli download stabilityai/stable-diffusion-3.5-medium \
+  --local-dir sd35-medium --local-dir-use-symlinks False
+```
 ## Reward Preparation
 
 Our supported reward models include [GenEval](https://github.com/djghosh13/geneval), [OCR](https://github.com/PaddlePaddle/PaddleOCR), [PickScore](https://github.com/yuvalkirstain/PickScore), [ClipScore](https://github.com/openai/CLIP), [HPSv2.1](https://github.com/tgxs002/HPSv2), [Aesthetic](https://github.com/christophschuhmann/improved-aesthetic-predictor), [ImageReward](https://github.com/zai-org/ImageReward) and [UnifiedReward](https://github.com/CodeGoat24/UnifiedReward). We additionally support `HPSv2.1` on top of FlowGRPO, and simplify `GenEval` from remote server to local. 
@@ -68,11 +77,16 @@ mim install mmengine
 git clone https://github.com/open-mmlab/mmcv.git
 cd mmcv; git checkout 1.x
 MMCV_WITH_OPS=1 FORCE_CUDA=1 pip install -e . -v
+# If the above fails due to build isolation on restricted indexes, use:
+# MMCV_WITH_OPS=1 FORCE_CUDA=1 python setup.py build_ext --inplace
+# python setup.py develop
 cd ..
 
 git clone https://github.com/open-mmlab/mmdetection.git
 cd mmdetection; git checkout 2.x
 pip install -e . -v
+# If pip editable install fails, use:
+# python setup.py develop
 cd ..
 
 pip install open-clip-torch clip-benchmark
