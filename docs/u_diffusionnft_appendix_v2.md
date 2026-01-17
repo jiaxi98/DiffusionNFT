@@ -180,8 +180,7 @@ $\tilde\pi_0^{\pm}(x_0,U\mid c)$ 改写为 $\tilde\pi_{0\mid t}^{\pm}(x_0\mid x_
 
 $$
 \tilde\pi_{0\mid t}^{old}(x_0\mid x_t,U,c)
-=
-\frac{p_{\tilde\pi^{old}}(o=1\mid c)\tilde\pi_t^{+}(x_t,U\mid c)}{\tilde\pi_t^{old}(x_t,U\mid c)}\tilde\pi_{0\mid t}^{+}(x_0\mid x_t,U,c)
+= \frac{p_{\tilde\pi^{old}}(o=1\mid c)\tilde\pi_t^{+}(x_t,U\mid c)}{\tilde\pi_t^{old}(x_t,U\mid c)}\tilde\pi_{0\mid t}^{+}(x_0\mid x_t,U,c)
 +\frac{(1-p_{\tilde\pi^{old}}(o=1\mid c))\tilde\pi_t^{-}(x_t,U\mid c)}{\tilde\pi_t^{old}(x_t,U\mid c)}\tilde\pi_{0\mid t}^{-}(x_0\mid x_t,U,c).
 $$
 
@@ -333,8 +332,7 @@ $$
 $$
 \boxed{
 \mathcal L_U(\theta)
-=
-\mathbb E_{c,\,(x_0,U)\sim \tilde\pi^{old}_0(\cdot,\cdot\mid c),\,t}
+= \mathbb E_{c,\,(x_0,U)\sim \tilde\pi^{old}_0(\cdot,\cdot\mid c),\,t}
 \Big[
 r(x_0,U,c)\,\|v^{+}_\theta(x_t,c,t)-v\|_{U}^{2}
 +\bigl(1-r(x_0,U,c)\bigr)\,\|v^{-}_\theta(x_t,c,t)-v\|_{U}^{2}
@@ -358,8 +356,7 @@ $$
 $$
 \boxed{
 v_\theta^{*}(x_t,c,t)[U]
-=
-v^{old}(x_t,c,t)[U]+\frac{2}{\beta}\,\Delta(x_t,c,t,U)[U]
+= v^{old}(x_t,c,t)[U]+\frac{2}{\beta}\,\Delta(x_t,c,t,U)[U]
 }
 $$
 (A.4-U)
@@ -379,8 +376,7 @@ $$
 由定义，
 $$
 \mathcal L_U(\theta)
-=
-\mathbb E_{c,t,\,(x_t,U)\sim \tilde\pi_t^{old}(\cdot,\cdot\mid c)}
+= \mathbb E_{c,t,\,(x_t,U)\sim \tilde\pi_t^{old}(\cdot,\cdot\mid c)}
 \mathbb E_{x_0\sim \tilde\pi^{old}_{0|t}(\cdot\mid x_t,U,c)}
 \Big[
 r(x_0,U,c)\|v_\theta^{+}-v\|_{U}^{2}
@@ -396,32 +392,26 @@ $$
 由 Lemma 2.1-U（即 $r\,\tilde\pi_0^{old}=p(o=1\mid c)\tilde\pi_0^{+}$）有：
 $$
 r(x_0,U,c)\,\tilde\pi_{0|t}^{old}(x_0\mid x_t,U,c)
-=
-r(x_0,U,c)\,\frac{\tilde\pi_0^{old}(x_0,U\mid c)\,\pi(x_t\mid x_0)}{\tilde\pi_t^{old}(x_t,U\mid c)}
-=
-p(o=1\mid c)\,\frac{\tilde\pi_0^{+}(x_0,U\mid c)\,\pi(x_t\mid x_0)}{\tilde\pi_t^{old}(x_t,U\mid c)}.
+= r(x_0,U,c)\,\frac{\tilde\pi_0^{old}(x_0,U\mid c)\,\pi(x_t\mid x_0)}{\tilde\pi_t^{old}(x_t,U\mid c)}
+= p(o=1\mid c)\,\frac{\tilde\pi_0^{+}(x_0,U\mid c)\,\pi(x_t\mid x_0)}{\tilde\pi_t^{old}(x_t,U\mid c)}.
 $$
 再乘除 $\tilde\pi_t^{+}(x_t,U\mid c)$ 并识别出 $\tilde\pi^{+}_{0|t}$：
 $$
 r(x_0,U,c)\,\tilde\pi_{0|t}^{old}(x_0\mid x_t,U,c)
-=
-\underbrace{\frac{p(o=1\mid c)\,\tilde\pi_t^{+}(x_t,U\mid c)}{\tilde\pi_t^{old}(x_t,U\mid c)}}_{:=\alpha(x_t,U)}
+= \underbrace{\frac{p(o=1\mid c)\,\tilde\pi_t^{+}(x_t,U\mid c)}{\tilde\pi_t^{old}(x_t,U\mid c)}}_{:=\alpha(x_t,U)}
 \tilde\pi_{0|t}^{+}(x_0\mid x_t,U,c)
-=
-\alpha(x_t,U)\,\tilde\pi_{0|t}^{+}(x_0\mid x_t,U,c).
+= \alpha(x_t,U)\,\tilde\pi_{0|t}^{+}(x_0\mid x_t,U,c).
 $$
 同理可得：
 $$
 (1-r(x_0,U,c))\,\tilde\pi_{0|t}^{old}(x_0\mid x_t,U,c)
-=
-(1-\alpha(x_t,U))\,\tilde\pi_{0|t}^{-}(x_0\mid x_t,U,c).
+= (1-\alpha(x_t,U))\,\tilde\pi_{0|t}^{-}(x_0\mid x_t,U,c).
 $$
 
 因此
 $$
 \mathcal L_U(\theta)
-=
-\mathbb E_{c,t,(x_t,U)\sim \tilde\pi_t^{old}}
+= \mathbb E_{c,t,(x_t,U)\sim \tilde\pi_t^{old}}
 \Big[
 \alpha(x_t,U)\,\mathbb E_{\tilde\pi^{+}_{0|t}}\|v_\theta^{+}-v\|_U^2
 +(1-\alpha(x_t,U))\,\mathbb E_{\tilde\pi^{-}_{0|t}}\|v_\theta^{-}-v\|_U^2
@@ -435,13 +425,11 @@ $$
 注意到对固定 $(x_t,c,t,U)$，$v_\theta^{\pm}(x_t,c,t)[U]$ 不依赖 $x_0$，因此
 $$
 \mathbb E_{\tilde\pi^{+}_{0|t}}\|v_\theta^{+}-v\|_U^2
-=
-\|v_\theta^{+}(x_t,c,t)[U]-\mathbb E_{\tilde\pi^{+}_{0|t}}[v[U]]\|_2^2 + C_{+},
+= \|v_\theta^{+}(x_t,c,t)[U]-\mathbb E_{\tilde\pi^{+}_{0|t}}[v[U]]\|_2^2 + C_{+},
 $$
 $$
 \mathbb E_{\tilde\pi^{-}_{0|t}}\|v_\theta^{-}-v\|_U^2
-=
-\|v_\theta^{-}(x_t,c,t)[U]-\mathbb E_{\tilde\pi^{-}_{0|t}}[v[U]]\|_2^2 + C_{-},
+= \|v_\theta^{-}(x_t,c,t)[U]-\mathbb E_{\tilde\pi^{-}_{0|t}}[v[U]]\|_2^2 + C_{-},
 $$
 其中 $C_{+},C_{-}$ 与 $\theta$ 无关。
 
@@ -454,8 +442,7 @@ $$
 于是
 $$
 \mathcal L_U(\theta)
-=
-\mathbb E_{c,t,(x_t,U)\sim \tilde\pi_t^{old}}
+= \mathbb E_{c,t,(x_t,U)\sim \tilde\pi_t^{old}}
 \Big[
 \alpha(x_t,U)\,\|v_\theta^{+}[U]-v^{+}[U]\|_2^2
 +(1-\alpha(x_t,U))\,\|v_\theta^{-}[U]-v^{-}[U]\|_2^2
@@ -470,8 +457,7 @@ $$
 $$
 v_\theta^{+}[U]-v^{+}[U]
 =(1-\beta)v^{old}[U]+\beta v_\theta[U]-v^{+}[U]
-=
-\beta\Big(v_\theta[U]-v^{old}[U]-\frac{1}{\beta}\bigl(v^{+}[U]-v^{old}[U]\bigr)\Big).
+= \beta\Big(v_\theta[U]-v^{old}[U]-\frac{1}{\beta}\bigl(v^{+}[U]-v^{old}[U]\bigr)\Big).
 $$
 由 A.3-U 中 $\Delta=\alpha(v^{+}-v^{old})$，在位置 $U$ 上有
 $$
@@ -480,24 +466,21 @@ $$
 因此
 $$
 v_\theta^{+}[U]-v^{+}[U]
-=
-\beta\Big(v_\theta[U]-v^{old}[U]-\frac{1}{\beta}\frac{\Delta[U]}{\alpha(x_t,U)}\Big).
+= \beta\Big(v_\theta[U]-v^{old}[U]-\frac{1}{\beta}\frac{\Delta[U]}{\alpha(x_t,U)}\Big).
 $$
 
 同理，
 $$
 v_\theta^{-}[U]-v^{-}[U]
 =(1+\beta)v^{old}[U]-\beta v_\theta[U]-v^{-}[U]
-=
--\beta\Big(v_\theta[U]-v^{old}[U]-\frac{1}{\beta}\frac{\Delta[U]}{1-\alpha(x_t,U)}\Big),
+= -\beta\Big(v_\theta[U]-v^{old}[U]-\frac{1}{\beta}\frac{\Delta[U]}{1-\alpha(x_t,U)}\Big),
 $$
 其中使用了 A.3-U 的另一半 $\Delta=(1-\alpha)(v^{old}-v^{-})$。
 
 将两式代回 $\mathcal L_U$，得到
 $$
 \mathcal L_U(\theta)
-=
-\beta^2\,
+= \beta^2\,
 \mathbb E_{c,t,(x_t,U)\sim \tilde\pi_t^{old}}
 \Big[
 \alpha\,\big\|v_\theta[U]-\big(v^{old}[U]+\frac{1}{\beta}\frac{\Delta[U]}{\alpha}\big)\big\|_2^2
@@ -512,8 +495,7 @@ $$
 对任意标量权重 $\alpha\in[0,1]$ 与两个“目标点” $a,b$，有恒等式
 $$
 \alpha\|z-a\|^2+(1-\alpha)\|z-b\|^2
-=
-\|z-(\alpha a+(1-\alpha)b)\|^2+\text{const},
+= \|z-(\alpha a+(1-\alpha)b)\|^2+\text{const},
 $$
 其中常数项与 $z$ 无关。
 
@@ -525,16 +507,13 @@ $$
 则其加权平均为
 $$
 \alpha a+(1-\alpha)b
-=
-v^{old}[U]+\frac{1}{\beta}\Delta[U]+\frac{1}{\beta}\Delta[U]
-=
-v^{old}[U]+\frac{2}{\beta}\Delta[U].
+= v^{old}[U]+\frac{1}{\beta}\Delta[U]+\frac{1}{\beta}\Delta[U]
+= v^{old}[U]+\frac{2}{\beta}\Delta[U].
 $$
 因此
 $$
 \mathcal L_U(\theta)
-=
-\beta^2\,
+= \beta^2\,
 \mathbb E_{c,t,(x_t,U)\sim \tilde\pi_t^{old}}
 \big\|v_\theta(x_t,c,t)[U]-\big(v^{old}(x_t,c,t)[U]+\frac{2}{\beta}\Delta(x_t,c,t,U)[U]\big)\big\|_2^2
 +C_2.
