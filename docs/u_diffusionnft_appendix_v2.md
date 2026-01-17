@@ -63,10 +63,12 @@ $$
 p(o=1\mid x_0,U,c)=r(x_0,U,c),\qquad p(o=0\mid x_0,U,c)=1-r(x_0,U,c).
 $$
 
-> 特例：当 reward map 是二值 mask（你提到的情形）  
-> $$
-> r_{\text{map}}(x_0,c)[U]\in\{0,1\},
-> $$
+> 特例：当 reward map 是二值 mask（你提到的情形）
+
+$$
+r_{\text{map}}(x_0,c)[U]\in\{0,1\},
+$$
+
 > 则 $o$ 在给定 $(x_0,U,c)$ 时是确定的（hard label）。
 
 ---
@@ -337,8 +339,9 @@ $$
 r(x_0,U,c)\,\|v^{+}_\theta(x_t,c,t)-v\|_{U}^{2}
 +\bigl(1-r(x_0,U,c)\bigr)\,\|v^{-}_\theta(x_t,c,t)-v\|_{U}^{2}
 \Big]
-}\tag{10-U}
+}
 $$
+(10-U)
 其中（与原论文一致的隐式正/负策略）：
 $$
 v^{+}_\theta(x_t,c,t):=(1-\beta)v^{old}(x_t,c,t)+\beta v_\theta(x_t,c,t),
@@ -357,8 +360,9 @@ $$
 v_\theta^{*}(x_t,c,t)[U]
 =
 v^{old}(x_t,c,t)[U]+\frac{2}{\beta}\,\Delta(x_t,c,t,U)[U]
-}\tag{A.4-U}
+}
 $$
+(A.4-U)
 其中 $\Delta(x_t,c,t,U)$ 是定理 3.1-U（A.3-U）定义的 reinforcement guidance：
 $$
 \Delta(x_t,c,t,U)
