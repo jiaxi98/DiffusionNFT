@@ -32,7 +32,7 @@
 ### 1.1 位置集合与采样分布
 
 - 位置集合 $\mathcal U$：可取为所有像素位置 $\{1,\dots,H\}\times\{1,\dots,W\}$，也可取 patch 网格 $\{1,\dots,H'\}\times\{1,\dots,W'\}$（强烈建议 patch 以降低方差）。
-- 位置采样分布：$p(U)=\mathrm{Uniform}(\mathcal U)$（默认）。  
+- 位置采样分布：$p(U)$（默认均匀分布）。  
   若工程上使用非均匀采样 $q(U)$（例如更偏向“坏区域”），则训练时需加重要性权重 $p(U)/q(U)$ 来保持无偏。
 
 ### 1.2 Forward noising kernel（与原论文一致）
@@ -63,12 +63,10 @@ $$
 p(o=1\mid x_0,U,c)=r(x_0,U,c),\qquad p(o=0\mid x_0,U,c)=1-r(x_0,U,c).
 $$
 
-> 特例：当 reward map 是二值 mask（你提到的情形）
-
-$$
-r_{\text{map}}(x_0,c)[U]\in\{0,1\},
-$$
-
+> 特例：当 reward map 是二值 mask（你提到的情形）  
+> $$
+> r_{\text{map}}(x_0,c)[U]\in\{0,1\},
+> $$
 > 则 $o$ 在给定 $(x_0,U,c)$ 时是确定的（hard label）。
 
 ---
@@ -180,7 +178,8 @@ $\tilde\pi_0^{\pm}(x_0,U\mid c)$ 改写为 $\tilde\pi_{0\mid t}^{\pm}(x_0\mid x_
 
 $$
 \tilde\pi_{0\mid t}^{old}(x_0\mid x_t,U,c)
-= \frac{p_{\tilde\pi^{old}}(o=1\mid c)\tilde\pi_t^{+}(x_t,U\mid c)}{\tilde\pi_t^{old}(x_t,U\mid c)}\tilde\pi_{0\mid t}^{+}(x_0\mid x_t,U,c)
+=
+\frac{p_{\tilde\pi^{old}}(o=1\mid c)\tilde\pi_t^{+}(x_t,U\mid c)}{\tilde\pi_t^{old}(x_t,U\mid c)}\tilde\pi_{0\mid t}^{+}(x_0\mid x_t,U,c)
 +\frac{(1-p_{\tilde\pi^{old}}(o=1\mid c))\tilde\pi_t^{-}(x_t,U\mid c)}{\tilde\pi_t^{old}(x_t,U\mid c)}\tilde\pi_{0\mid t}^{-}(x_0\mid x_t,U,c).
 $$
 
@@ -274,7 +273,7 @@ $$
 
 ### 4.2 U-DiffusionNFT 的训练目标
 
-对 minibatch 中每个样本 $(c,x_0,r_{\text{map}})$，采样 $t\sim\mathrm{Uniform}([0,1])$、$\epsilon\sim\mathcal N(0,I)$，构造 forward pairing（同原论文 Algorithm 1）：
+对 minibatch 中每个样本 $(c,x_0,r_{\text{map}})$，采样 $t\sim\mathcal U[0,1]$、$\epsilon\sim\mathcal N(0,I)$，构造 forward pairing（同原论文 Algorithm 1）：
 
 $$
 x_t=\alpha_t x_0+\sigma_t\epsilon,
@@ -311,226 +310,69 @@ $$
 
 ---
 
-### 定理 4.1-U（Reinforcement Guidance Optimization，U-版；对应原论文 Theorem A.4）
+### 定理 4.1-U（U-Policy Optimization：对应原论文 Eq.(6) / Theorem A.4）
 
-这一部分是你指出的 *tricky* 点：在定理 3.1-U（A.3-U）里，理论上的 $v^{+},v^{-},\Delta$ 都带有 $U$ 依赖。
-但 **实现与优化时的模型 $v_\theta$ 不需要把 $U$ 作为输入**——因为 $U$ 在这里仅仅是**输出张量的坐标/索引**（或 loss 中被采样的位置），而不是“额外条件变量”。
+在无限数据、无限模型容量的理想条件下，$\mathcal L_U(\theta)$ 的最优解满足（对每个位置 $u\in\mathcal U$ 逐点成立）：
 
-为避免混淆，我们显式区分：
-- 训练的模型：$v_\theta(x_t,c,t)$（输出一个张量场），**不输入 $U$**；
-- 证明里出现的 $U$：用于把 dense reward map 转成标量 $r(x_0,U,c)$，并在 loss 中选择坐标 $[U]$。
-
----
-
-#### 训练目标（对应原论文 Eq.(10)，U-版）
-
-定义“坐标投影”与其范数：
-- 对任意张量 $z$，记 $z[U]$ 为在位置 $U$ 的向量（通常是通道维上的向量）；
-- $\|z\|_{U}^{2}:=\|z[U]\|_{2}^{2}$。
-
-考虑训练目标：
 $$
-\boxed{
-\mathcal L_U(\theta)
-= \mathbb E_{c,\,(x_0,U)\sim \tilde\pi^{old}_0(\cdot,\cdot\mid c),\,t}
+v_\theta^{*}(x_t,c,t)[u]
+=
+v^{old}(x_t,c,t)[u]
++\frac{2}{\beta}\Delta(x_t,c,t,u),
+$$
+其中 $\Delta(x_t,c,t,u)$ 由定理 3.1-U 给出。
+
+**证明（严格仿照原 Appendix A 的 Theorem A.4 结构）：**
+
+1) 将 $\mathcal L_U$ 写成对 $\tilde\pi_{0\mid t}^{old}$ 的期望（与原论文同型）：
+$$
+\mathcal L_U(\theta)=\mathbb E_{c,t,(x_t,U)\sim \tilde\pi_t^{old}}
+\mathbb E_{x_0\sim \tilde\pi_{0\mid t}^{old}(\cdot\mid x_t,U,c)}
 \Big[
-r(x_0,U,c)\,\|v^{+}_\theta(x_t,c,t)-v\|_{U}^{2}
-+\bigl(1-r(x_0,U,c)\bigr)\,\|v^{-}_\theta(x_t,c,t)-v\|_{U}^{2}
-\Big]
-}
-$$
-(10-U)
-其中（与原论文一致的隐式正/负策略）：
-$$
-v^{+}_\theta(x_t,c,t):=(1-\beta)v^{old}(x_t,c,t)+\beta v_\theta(x_t,c,t),
-\qquad
-v^{-}_\theta(x_t,c,t):=(1+\beta)v^{old}(x_t,c,t)-\beta v_\theta(x_t,c,t).
-$$
-注意：这里 **$v_\theta,v^{\pm}_\theta$ 都不依赖 $U$**；$U$ 只出现在 reward 与 $\|\cdot\|_U$ 的坐标选择中。
-
----
-
-#### 结论（对应原论文 Theorem A.4）
-
-在无限数据与无限模型容量下，$(10\text{-U})$ 的最优解满足（对任意 $U$ 逐点成立）：
-$$
-\boxed{
-v_\theta^{*}(x_t,c,t)[U]
-= v^{old}(x_t,c,t)[U]+\frac{2}{\beta}\,\Delta(x_t,c,t,U)[U]
-}
-$$
-(A.4-U)
-其中 $\Delta(x_t,c,t,U)$ 是定理 3.1-U（A.3-U）定义的 reinforcement guidance：
-$$
-\Delta(x_t,c,t,U)
-:=[1-\alpha(x_t,U)]\bigl(v^{old}(x_t,c,t)-v^{-}(x_t,c,t,U)\bigr)
-=\alpha(x_t,U)\bigl(v^{+}(x_t,c,t,U)-v^{old}(x_t,c,t)\bigr).
-$$
-
----
-
-### 证明（严格按原论文 A.4 proof 的结构，逐步把 $U$ 带进去）
-
-**Step 1：把 $\mathcal L_U$ 写成 $(x_t,U)$ 的边缘与后验上的期望（同原论文第一行）**
-
-由定义，
-$$
-\mathcal L_U(\theta)
-= \mathbb E_{c,t,\,(x_t,U)\sim \tilde\pi_t^{old}(\cdot,\cdot\mid c)}
-\mathbb E_{x_0\sim \tilde\pi^{old}_{0|t}(\cdot\mid x_t,U,c)}
-\Big[
-r(x_0,U,c)\|v_\theta^{+}-v\|_{U}^{2}
-+(1-r(x_0,U,c))\|v_\theta^{-}-v\|_{U}^{2}
-\Big],
-$$
-其中 $x_t\sim\pi(\cdot\mid x_0)$，且 $\tilde\pi_t^{old},\tilde\pi_{0|t}^{old}$ 来自前面 Lemma 2.1/2.2 的定义。
-
----
-
-**Step 2：用 Lemma 2.1-U / 2.2-U 把 $r\,\tilde\pi^{old}_{0|t}$ 改写成 $\alpha\,\tilde\pi^{+}_{0|t}$（对应原论文中 “From Lemma A.1 … therefore” 那步）**
-
-由 Lemma 2.1-U（即 $r\,\tilde\pi_0^{old}=p(o=1\mid c)\tilde\pi_0^{+}$）有：
-$$
-r(x_0,U,c)\,\tilde\pi_{0|t}^{old}(x_0\mid x_t,U,c)
-= r(x_0,U,c)\,\frac{\tilde\pi_0^{old}(x_0,U\mid c)\,\pi(x_t\mid x_0)}{\tilde\pi_t^{old}(x_t,U\mid c)}
-= p(o=1\mid c)\,\frac{\tilde\pi_0^{+}(x_0,U\mid c)\,\pi(x_t\mid x_0)}{\tilde\pi_t^{old}(x_t,U\mid c)}.
-$$
-再乘除 $\tilde\pi_t^{+}(x_t,U\mid c)$ 并识别出 $\tilde\pi^{+}_{0|t}$：
-$$
-r(x_0,U,c)\,\tilde\pi_{0|t}^{old}(x_0\mid x_t,U,c)
-= \underbrace{\frac{p(o=1\mid c)\,\tilde\pi_t^{+}(x_t,U\mid c)}{\tilde\pi_t^{old}(x_t,U\mid c)}}_{:=\alpha(x_t,U)}
-\tilde\pi_{0|t}^{+}(x_0\mid x_t,U,c)
-= \alpha(x_t,U)\,\tilde\pi_{0|t}^{+}(x_0\mid x_t,U,c).
-$$
-同理可得：
-$$
-(1-r(x_0,U,c))\,\tilde\pi_{0|t}^{old}(x_0\mid x_t,U,c)
-= (1-\alpha(x_t,U))\,\tilde\pi_{0|t}^{-}(x_0\mid x_t,U,c).
-$$
-
-因此
-$$
-\mathcal L_U(\theta)
-= \mathbb E_{c,t,(x_t,U)\sim \tilde\pi_t^{old}}
-\Big[
-\alpha(x_t,U)\,\mathbb E_{\tilde\pi^{+}_{0|t}}\|v_\theta^{+}-v\|_U^2
-+(1-\alpha(x_t,U))\,\mathbb E_{\tilde\pi^{-}_{0|t}}\|v_\theta^{-}-v\|_U^2
+r(x_0,U,c)\|v_\theta^{+}[U]-v[U]\|^2+(1-r(x_0,U,c))\|v_\theta^{-}[U]-v[U]\|^2
 \Big].
 $$
 
----
+2) 用引理 2.1/2.2 把 “$r\tilde\pi_{0\mid t}^{old}$” 与 “$(1-r)\tilde\pi_{0\mid t}^{old}$” 转换成正/负后验（同原论文把 $r\pi^{old}$ 换成 $\alpha\pi^+$ 的步骤）：
+$$
+r(x_0,U,c)\,\tilde\pi_{0\mid t}^{old}(x_0\mid x_t,U,c)=\alpha(x_t,U)\,\tilde\pi_{0\mid t}^{+}(x_0\mid x_t,U,c),
+$$
+$$
+(1-r(x_0,U,c))\,\tilde\pi_{0\mid t}^{old}(x_0\mid x_t,U,c)=[1-\alpha(x_t,U)]\,\tilde\pi_{0\mid t}^{-}(x_0\mid x_t,U,c).
+$$
 
-**Step 3：把“回归到随机变量 $v[U]$”改写成“回归到其条件均值” + 常数（对应原论文把 $E\|a-v\|^2$ 改写为 $\|a-E[v]\|^2+C_1$）**
+3) 代回去并利用“$v_\theta^{\pm}(x_t,c,t)$ 在给定 $(x_t,c,t)$ 时不依赖 $x_0$”这一点，把它从内层期望中提出来（原论文同样用这一步从而出现 $\mathbb E[v]$）：
+$$
+\mathcal L_U(\theta)
+=
+\mathbb E_{c,t,(x_t,U)\sim \tilde\pi_t^{old}}
+\Big[
+\alpha(x_t,U)\,\mathbb E_{\tilde\pi_{0\mid t}^{+}}\|v_\theta^{+}[U]-v[U]\|^2
++[1-\alpha(x_t,U)]\,\mathbb E_{\tilde\pi_{0\mid t}^{-}}\|v_\theta^{-}[U]-v[U]\|^2
+\Big].
+$$
 
-注意到对固定 $(x_t,c,t,U)$，$v_\theta^{\pm}(x_t,c,t)[U]$ 不依赖 $x_0$，因此
+4) 对固定的 $(x_t,c,t,U)$，最小化 $\mathbb E\|a-v[U]\|^2$ 的最优解是 $a=\mathbb E[v[U]]$。  
+于是最优条件为：
 $$
-\mathbb E_{\tilde\pi^{+}_{0|t}}\|v_\theta^{+}-v\|_U^2
-= \|v_\theta^{+}(x_t,c,t)[U]-\mathbb E_{\tilde\pi^{+}_{0|t}}[v[U]]\|_2^2 + C_{+},
+v_\theta^{+}(x_t,c,t)[U]=v^{+}(x_t,c,t,U)[U],\qquad
+v_\theta^{-}(x_t,c,t)[U]=v^{-}(x_t,c,t,U)[U],
 $$
+其中
 $$
-\mathbb E_{\tilde\pi^{-}_{0|t}}\|v_\theta^{-}-v\|_U^2
-= \|v_\theta^{-}(x_t,c,t)[U]-\mathbb E_{\tilde\pi^{-}_{0|t}}[v[U]]\|_2^2 + C_{-},
-$$
-其中 $C_{+},C_{-}$ 与 $\theta$ 无关。
-
-定义（注意这里的 $v^{\pm}$ 是理论上的“最优 teacher”，允许依赖 $U$）：
-$$
-v^{+}(x_t,c,t,U)[U]:=\mathbb E_{x_0\sim \tilde\pi^{+}_{0|t}(\cdot\mid x_t,U,c)}[v[U]],
+v^{+}(x_t,c,t,U):=\mathbb E_{x_0\sim \tilde\pi_{0\mid t}^{+}(\cdot\mid x_t,U,c)}[v],
 \quad
-v^{-}(x_t,c,t,U)[U]:=\mathbb E_{x_0\sim \tilde\pi^{-}_{0|t}(\cdot\mid x_t,U,c)}[v[U]].
-$$
-于是
-$$
-\mathcal L_U(\theta)
-= \mathbb E_{c,t,(x_t,U)\sim \tilde\pi_t^{old}}
-\Big[
-\alpha(x_t,U)\,\|v_\theta^{+}[U]-v^{+}[U]\|_2^2
-+(1-\alpha(x_t,U))\,\|v_\theta^{-}[U]-v^{-}[U]\|_2^2
-\Big]+C_1.
+v^{-}(x_t,c,t,U):=\mathbb E_{x_0\sim \tilde\pi_{0\mid t}^{-}(\cdot\mid x_t,U,c)}[v].
 $$
 
----
+5) 将 implicit 定义
+$v_\theta^{+}=(1-\beta)v^{old}+\beta v_\theta$、$v_\theta^{-}=(1+\beta)v^{old}-\beta v_\theta$
+与上一步的最优条件联立，可解得（对每个位置逐点成立）：
+$$
+v_\theta^{*}=v^{old}+\frac{2}{\beta}\Delta,
+$$
+其中 $\Delta$ 由定理 3.1-U 得出。证毕。
 
-**Step 4：代入隐式正/负策略，并用定理 3.1-U（A.3-U）把它们化成关于 $v_\theta-v^{old}$ 与 $\Delta$ 的平方（对应原论文 “Combining Theorem A.3 … Substituting …” 那几行）**
-
-由隐式定义：
-$$
-v_\theta^{+}[U]-v^{+}[U]
-=(1-\beta)v^{old}[U]+\beta v_\theta[U]-v^{+}[U]
-= \beta\Big(v_\theta[U]-v^{old}[U]-\frac{1}{\beta}\bigl(v^{+}[U]-v^{old}[U]\bigr)\Big).
-$$
-由 A.3-U 中 $\Delta=\alpha(v^{+}-v^{old})$，在位置 $U$ 上有
-$$
-v^{+}[U]-v^{old}[U]=\frac{\Delta[U]}{\alpha(x_t,U)} \quad(\alpha>0),
-$$
-因此
-$$
-v_\theta^{+}[U]-v^{+}[U]
-= \beta\Big(v_\theta[U]-v^{old}[U]-\frac{1}{\beta}\frac{\Delta[U]}{\alpha(x_t,U)}\Big).
-$$
-
-同理，
-$$
-v_\theta^{-}[U]-v^{-}[U]
-=(1+\beta)v^{old}[U]-\beta v_\theta[U]-v^{-}[U]
-= -\beta\Big(v_\theta[U]-v^{old}[U]-\frac{1}{\beta}\frac{\Delta[U]}{1-\alpha(x_t,U)}\Big),
-$$
-其中使用了 A.3-U 的另一半 $\Delta=(1-\alpha)(v^{old}-v^{-})$。
-
-将两式代回 $\mathcal L_U$，得到
-$$
-\mathcal L_U(\theta)
-= \beta^2\,
-\mathbb E_{c,t,(x_t,U)\sim \tilde\pi_t^{old}}
-\Big[
-\alpha\,\big\|v_\theta[U]-\big(v^{old}[U]+\frac{1}{\beta}\frac{\Delta[U]}{\alpha}\big)\big\|_2^2
-+(1-\alpha)\,\big\|v_\theta[U]-\big(v^{old}[U]+\frac{1}{\beta}\frac{\Delta[U]}{1-\alpha}\big)\big\|_2^2
-\Big]+C_1.
-$$
-
----
-
-**Step 5：配方（complete the square），把两项合成一项（对应原论文最后几行）**
-
-对任意标量权重 $\alpha\in[0,1]$ 与两个“目标点” $a,b$，有恒等式
-$$
-\alpha\|z-a\|^2+(1-\alpha)\|z-b\|^2
-= \|z-(\alpha a+(1-\alpha)b)\|^2+\text{const},
-$$
-其中常数项与 $z$ 无关。
-
-令
-$$
-a:=v^{old}[U]+\frac{1}{\beta}\frac{\Delta[U]}{\alpha},\qquad
-b:=v^{old}[U]+\frac{1}{\beta}\frac{\Delta[U]}{1-\alpha},
-$$
-则其加权平均为
-$$
-\alpha a+(1-\alpha)b
-= v^{old}[U]+\frac{1}{\beta}\Delta[U]+\frac{1}{\beta}\Delta[U]
-= v^{old}[U]+\frac{2}{\beta}\Delta[U].
-$$
-因此
-$$
-\mathcal L_U(\theta)
-= \beta^2\,
-\mathbb E_{c,t,(x_t,U)\sim \tilde\pi_t^{old}}
-\big\|v_\theta(x_t,c,t)[U]-\big(v^{old}(x_t,c,t)[U]+\frac{2}{\beta}\Delta(x_t,c,t,U)[U]\big)\big\|_2^2
-+C_2.
-$$
-从而显然最优解满足：
-$$
-v_\theta^{*}(x_t,c,t)[U]=v^{old}(x_t,c,t)[U]+\frac{2}{\beta}\Delta(x_t,c,t,U)[U].
-$$
-证毕。
-
----
-
-**关于“会不会迫使模型输入 $U$”的 double-check：**
-
-- 证明里的 $v^{+}(x_t,c,t,U)$、$v^{-}(x_t,c,t,U)$ 的确是“条件在 $U$”下的理论最优 teacher；
-- 但训练目标只回归其在同一位置的分量 $[U]$，且 $v_\theta$ 本身输出的是整张图/整张 latent 网格的张量，天然就包含“每个 $U$ 的分量”；
-- 因此 **实现上无需把 $U$ 作为网络输入**：只需要在 loss 中对输出张量做 gather / 加权即可。
 ---
 
 ## 5. 算法描述（pseudocode）与每一步的采样/计算细节
@@ -572,6 +414,75 @@ $$
 - 黑盒 reward map 函数 $R_{\text{raw}}(x_0,c)$
 - 位置采样分布 $p(U)$
 - 超参数：组大小 $K$、每张图采样位置数 $m$、$\beta$、学习率 $\lambda$、EMA 系数 $\eta_i$、归一化因子 $Z_c$
+
+---
+
+#### Pseudocode
+
+```text
+Algorithm: U-DiffusionNFT (Dense Reward Map via Location Variable U)
+
+Require:
+    v_ref               # pretrained diffusion policy (velocity parameterization)
+    R_raw(x0, c)        # black-box reward map function, returns H×W (or H'×W')
+    {c}                 # prompt dataset
+Hyperparams:
+    K                   # images per prompt in rollout
+    m                   # number of sampled locations per image in training
+    beta                # implicit-policy hyperparameter
+    lr                  # learning rate
+    {eta_i}             # EMA schedule for sampling policy update
+    Z_c                 # reward normalization scale (scalar or map-scale)
+
+Initialize:
+    v_old <- v_ref
+    v_theta <- v_ref
+    buffer D <- empty
+
+for iteration i = 1,2,... do
+
+  # (A) Rollout / Data Collection (same as DiffusionNFT, but store reward maps)
+  for each sampled prompt c do
+      Sample K images x0^{1:K} ~ pi_old(·|c) using ANY black-box solver
+      For each k:
+          R_raw^k <- R_raw(x0^k, c)                    # reward map
+      Normalize within group (elementwise):
+          R_norm^k <- R_raw^k - mean_k(R_raw^k)
+      Map to optimality probability (elementwise):
+          r_map^k <- 0.5 + 0.5 * clip(R_norm^k / Z_c, -1, 1)    # in [0,1]^{H×W}
+      Push {c, x0^k, r_map^k} into buffer D
+
+  # (B) Gradient / Policy Optimization
+  for each minibatch {c, x0, r_map} from buffer D do
+      Sample timestep t and Gaussian eps
+      Forward process:
+          x_t = alpha_t * x0 + sigma_t * eps
+          v   = dot(alpha_t) * x0 + dot(sigma_t) * eps          # flow-matching target
+
+      Sample locations:
+          U_1,...,U_m ~ p(U)
+
+      Compute per-location optimality probs:
+          r_j = r_map[U_j]     for j=1..m
+
+      Implicit velocities (identical to DiffusionNFT):
+          v_theta^+ = (1 - beta) * v_old(x_t,c,t) + beta * v_theta(x_t,c,t)
+          v_theta^- = (1 + beta) * v_old(x_t,c,t) - beta * v_theta(x_t,c,t)
+
+      Loss (Monte Carlo estimator over U):
+          L = (1/m) * sum_j [
+                r_j * || v_theta^+[U_j] - v[U_j] ||^2
+              + (1-r_j) * || v_theta^-[U_j] - v[U_j] ||^2
+              ]
+
+      Update theta by gradient descent on L
+
+  # (C) Online update of sampling policy (same as DiffusionNFT)
+  theta_old <- eta_i * theta_old + (1 - eta_i) * theta
+  clear buffer D
+
+Output: v_theta
+```
 
 ---
 
