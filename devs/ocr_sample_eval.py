@@ -1,8 +1,28 @@
 #!/usr/bin/env python3
+"""
+Run Z-Image OCR sampling
+  python devs/ocr_sample_eval.py \
+    --backend zimage \
+    --zimage_model_dir Z-Image/ckpts/Z-Image-Turbo \
+    --num_prompts 1 \
+    --seeds 42 \
+    --num_inference_steps 9 \
+    --guidance_scale 0.0 \
+    --resolution 1024 \
+    --bf16 \
+    --output_dir samples/zimage
+
+Run SD3 OCR sampling
+    python devs/ocr_sample_eval.py \
+        --backend sd3 \
+        --checkpoint_path /path/to/your/checkpoint \
+        --num_inference_steps 40
+"""
 import argparse
 import os
 from pathlib import Path
 import re
+import sys
 
 import numpy as np
 from PIL import Image
@@ -91,17 +111,39 @@ def load_pipeline(checkpoint_path: str, device: torch.device, dtype: torch.dtype
     return pipeline
 
 
+def load_zimage_components(model_dir: str, device: torch.device, dtype: torch.dtype, attn_backend: str | None):
+    repo_root = Path(__file__).resolve().parents[1]
+    zimage_src = repo_root / "Z-Image" / "src"
+    if not zimage_src.exists():
+        raise FileNotFoundError(f"Z-Image source not found at {zimage_src}")
+    if str(zimage_src) not in sys.path:
+        sys.path.insert(0, str(zimage_src))
+
+    from utils import load_from_local_dir, set_attention_backend
+    from zimage import generate as zimage_generate
+
+    if attn_backend:
+        set_attention_backend(attn_backend)
+
+    components = load_from_local_dir(model_dir, device=str(device), dtype=dtype, compile=False)
+    return components, zimage_generate
+
+
 def main():
     parser = argparse.ArgumentParser(description="Generate OCR samples and score with PaddleOCR.")
-    parser.add_argument("--checkpoint_path", required=True)
+    parser.add_argument("--backend", choices=["sd3", "zimage"], default="sd3")
+    parser.add_argument("--checkpoint_path")
+    parser.add_argument("--zimage_model_dir", default="Z-Image/ckpts/Z-Image-Turbo")
+    parser.add_argument("--zimage_attention_backend", default=None)
     parser.add_argument("--dataset_file", default="dataset/ocr/test.txt")
     parser.add_argument("--num_prompts", type=int, default=8)
     parser.add_argument("--seeds", default="0,1,2")
-    parser.add_argument("--output_dir", default="samples/ocr_checkpoint-60")
+    parser.add_argument("--output_dir", default="samples/geneval")
     parser.add_argument("--num_inference_steps", type=int, default=40)
     parser.add_argument("--guidance_scale", type=float, default=1.0)
     parser.add_argument("--resolution", type=int, default=512)
     parser.add_argument("--fp16", action="store_true")
+    parser.add_argument("--bf16", action="store_true")
     args = parser.parse_args()
 
     seeds = [int(s.strip()) for s in args.seeds.split(",") if s.strip()]
@@ -113,9 +155,25 @@ def main():
     prompts = prompts[: args.num_prompts]
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    dtype = torch.float16 if args.fp16 else torch.float32
+    if args.bf16:
+        dtype = torch.bfloat16
+    elif args.fp16:
+        dtype = torch.float16
+    else:
+        dtype = torch.float32
 
-    pipeline = load_pipeline(args.checkpoint_path, device, dtype)
+    if args.backend == "sd3":
+        if not args.checkpoint_path:
+            raise ValueError("--checkpoint_path is required for backend=sd3")
+        pipeline = load_pipeline(args.checkpoint_path, device, dtype)
+        zimage_components = None
+        zimage_generate = None
+    else:
+        zimage_components, zimage_generate = load_zimage_components(
+            args.zimage_model_dir, device, dtype, args.zimage_attention_backend
+        )
+        pipeline = None
+
     ocr = PaddleOCR(use_angle_cls=False, lang="en", use_gpu=False)
 
     rows = []
@@ -125,15 +183,29 @@ def main():
         for seed in seeds:
             generator = torch.Generator(device=device).manual_seed(seed)
             with torch.no_grad():
-                image = pipeline(
-                    [prompt],
-                    num_inference_steps=args.num_inference_steps,
-                    guidance_scale=args.guidance_scale,
-                    output_type="pil",
-                    height=args.resolution,
-                    width=args.resolution,
-                    generator=generator,
-                )[0][0]
+                if args.backend == "sd3":
+                    image = pipeline(
+                        [prompt],
+                        num_inference_steps=args.num_inference_steps,
+                        guidance_scale=args.guidance_scale,
+                        output_type="pil",
+                        height=args.resolution,
+                        width=args.resolution,
+                        generator=generator,
+                    )[0][0]
+                else:
+                    images = zimage_generate(
+                        prompt=prompt,
+                        height=args.resolution,
+                        width=args.resolution,
+                        num_inference_steps=args.num_inference_steps,
+                        guidance_scale=args.guidance_scale,
+                        num_images_per_prompt=1,
+                        generator=generator,
+                        output_type="pil",
+                        **zimage_components,
+                    )
+                    image = images[0]
             img_path = prompt_dir / f"seed_{seed}.jpg"
             image.save(img_path)
 
@@ -157,6 +229,9 @@ def main():
     with report_path.open("w", encoding="utf-8") as f:
         f.write("# OCR Sample Evaluation Report\n\n")
         f.write(f"- checkpoint: {args.checkpoint_path}\n")
+        f.write(f"- backend: {args.backend}\n")
+        if args.backend == "zimage":
+            f.write(f"- zimage_model_dir: {args.zimage_model_dir}\n")
         f.write(f"- dataset: {args.dataset_file}\n")
         f.write(f"- prompts: {len(prompts)}\n")
         f.write(f"- seeds per prompt: {len(seeds)} ({args.seeds})\n")

@@ -102,6 +102,22 @@ def get_config():
     config.reward_fn = ml_collections.ConfigDict()
     config.save_dir = ""
 
+    ###### Reward Map (Dense Reward) ######
+    config.reward_map = reward_map = ml_collections.ConfigDict()
+    reward_map.enabled = False
+    reward_map.name = "not_implemented"
+    reward_map.map_resolution = None  # (H_lat, W_lat) if known; None for auto/infer
+    reward_map.num_samples = 64  # number of sampled locations per image
+    reward_map.sample_distribution = "uniform"
+    reward_map.loss_scale = 1.0
+    reward_map.normalize = False
+    reward_map.Z_c = 1.0
+    # OCR reward-map settings (used by reward_map.name = "ocr_map")
+    reward_map.downsample_factor = 8  # image -> latent grid (e.g., 512 -> 64)
+    reward_map.bg = 0.5  # background reward baseline
+    reward_map.blur = 7  # Gaussian blur kernel radius for soft masks
+    reward_map.use_gpu = False  # PaddleOCR GPU usage
+
     ###### Per-Prompt Stat Tracking ######
     config.per_prompt_stat_tracking = True
 

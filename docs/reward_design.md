@@ -52,8 +52,55 @@ CLIPScore uses the CLS embedding, which is a weighted aggregation of patch token
 Attention maps (especially gradient-weighted) provide an attribution of which patches
 contribute most to the CLIPScore.
 
+### Interpretation notes (CLIP mechanisms)
+
+- CLIP uses **separate** image/text encoders; the image encoder does not see the text at inference.
+  So attention/activation maps are not explicitly text-conditioned; they are only **indirectly**
+  related to text via contrastive training.
+- CLS attention indicates how much each patch token contributes to the CLS representation
+  within that layer (it is a weighted sum of patch values).
+- Attention alone is **not a faithful explanation** of model decisions; gradient-based
+  attributions tend to be more directly linked to the CLIPScore.
+
+References (minimal):
+- CLIP (Radford et al., 2021), arXiv:2103.00020
+- CLIPScore (Hessel et al., 2021), arXiv:2104.08718
+- Attention is not Explanation (Jain & Wallace, 2019), arXiv:1902.10186
+- Attention Rollout (Abnar & Zuidema, 2020), arXiv:2005.00928
+- Transformer explainability (Chefer et al., 2021), arXiv:2012.09838
+
 ### Summary
 
 - Variant 1: simplest; likely noisy.
 - Variant 2: stable and semantically aligned; our primary candidate.
 - Variant 3: promising for text localization; depends on attention access.
+
+
+## OCR based pixel-level reward
+
+The OCR output provides a list of detected text lines, each with a bounding box and a confidence score.
+To build a pixel-level reward map from this output:
+
+### Target text extraction
+- Define the target text as the quoted string(s) in the prompt.
+- Example prompt: ... displaying "Spring Collection 2024" ...
+  -> targets = ["Spring Collection 2024"]
+
+### Per-box reward
+- For each OCR line with recognized string `s` and confidence `r`, compute string similarity:
+  sim = 1 - normalized_edit_distance(s, target)
+- If a target matches multiple boxes, use best-match (or Hungarian matching for multi-target).
+- Define reward inside the box as:
+  reward_box = r * sim
+
+### Background and missing targets
+- Pixels outside any OCR box should be neutral, not 1. Use:
+  reward_bg = 0.5  (or another baseline)
+- If a target is missing (no OCR box matches), optionally apply a global penalty or reduce reward_bg.
+
+### Soft mask (recommended)
+- Avoid hard box edges by using a soft mask:
+  reward_map = reward_bg + mask * (reward_box - reward_bg)
+- mask can be a Gaussian blur of the binary box mask.
+
+This keeps the reward localized to text regions while avoiding domination by background pixels.

@@ -127,7 +127,8 @@ export WANDB_API_KEY=xxx
 export WANDB_ENTITY=xxx
 
 # GenEval
-torchrun --nproc_per_node=8 scripts/train_nft_sd3.py --config config/nft.py:sd3_geneval
+export NETRC="${NETRC:-$HOME/.netrc_wandb}"
+torchrun --nproc_per_node=8 scripts/train_nft_sd3.py --config config/nft.py:sd3_geneval_safe --config.pretrained.model=sd35-medium
 
 # Multi-reward
 torchrun --nproc_per_node=8 scripts/train_nft_sd3.py --config config/nft.py:sd3_multi_reward

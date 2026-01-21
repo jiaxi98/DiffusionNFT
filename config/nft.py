@@ -76,6 +76,13 @@ def sd3_ocr():
     )
     config.beta = 0.1
     config.decay_type = 2
+    # Enable OCR reward map
+    config.reward_map.enabled = True
+    config.reward_map.name = "ocr_map"
+    config.reward_map.downsample_factor = 8  # 512 -> 64 latent grid
+    config.reward_map.bg = 0.5
+    config.reward_map.blur = 7
+    config.reward_map.use_gpu = False
     return config
 
 
@@ -161,4 +168,11 @@ def sd3_multi_reward():
     )
     config.sample.num_steps = 25
     config.beta = 0.1
+    config.sample.num_image_per_prompt = 8  # k must divide (n_gpus * train_batch_size) => 8 | 16
+    config.sample.train_batch_size = 2
+    config.sample.num_batches_per_epoch = 24
+    config.train.batch_size = 2
+    config.train.gradient_accumulation_steps = 24
+    config.sample.test_batch_size = 4
+    config.sample.eval_num_steps = 10
     return config
